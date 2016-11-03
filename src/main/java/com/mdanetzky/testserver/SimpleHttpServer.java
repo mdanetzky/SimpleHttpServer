@@ -20,8 +20,8 @@ import java.util.stream.Collectors;
 
 public class SimpleHttpServer {
 
-    private static int currentPort = 1665;
     public static final SSLContext sslContext = HttpsInitializer.tryToGetSslContext();
+    private static int currentPort = 1665;
     private static SimpleHttpServer testServer;
     private static SimpleHttpServer testServerSsl;
     private static int contextSuffix = 0;
@@ -34,22 +34,10 @@ public class SimpleHttpServer {
         httpServer.start();
     }
 
-    private HttpServer createServer(boolean ssl) throws IOException {
-        if (ssl)
-            return createHttpsServer();
-        return HttpServer.create();
-    }
-
     private static void bindFreePort(HttpServer server) throws IOException {
         while (server.getAddress() == null)
             if (tryToBindPort(server))
                 break;
-    }
-
-    private HttpServer createHttpsServer() throws IOException {
-        HttpsServer httpsServer = HttpsServer.create();
-        httpsServer.setHttpsConfigurator(new MyHttpsConfigurator());
-        return httpsServer;
     }
 
     private static boolean tryToBindPort(HttpServer httpServer) throws IOException {
@@ -65,22 +53,6 @@ public class SimpleHttpServer {
         currentPort++;
         InetSocketAddress address = new InetSocketAddress(currentPort);
         httpServer.bind(address, 0);
-    }
-
-    private void addContext(String contextPath, HttpHandler httpHandler) {
-        httpServer.createContext(contextPath, httpHandler);
-    }
-
-    private String getOrigin() {
-        return getProtocol() + "://localhost:" + httpServer.getAddress().getPort();
-    }
-
-    private String getProtocol() {
-        return httpServer instanceof HttpsServer ? "https" : "http";
-    }
-
-    private void stopInstance() {
-        httpServer.stop(0);
     }
 
     public static Builder getBuilder() {
@@ -117,6 +89,34 @@ public class SimpleHttpServer {
         if (testServerSsl == null)
             testServerSsl = new SimpleHttpServer(true);
         return "/" + contextSuffix++;
+    }
+
+    private HttpServer createServer(boolean ssl) throws IOException {
+        if (ssl)
+            return createHttpsServer();
+        return HttpServer.create();
+    }
+
+    private HttpServer createHttpsServer() throws IOException {
+        HttpsServer httpsServer = HttpsServer.create();
+        httpsServer.setHttpsConfigurator(new MyHttpsConfigurator());
+        return httpsServer;
+    }
+
+    private void addContext(String contextPath, HttpHandler httpHandler) {
+        httpServer.createContext(contextPath, httpHandler);
+    }
+
+    private String getOrigin() {
+        return getProtocol() + "://localhost:" + httpServer.getAddress().getPort();
+    }
+
+    private String getProtocol() {
+        return httpServer instanceof HttpsServer ? "https" : "http";
+    }
+
+    private void stopInstance() {
+        httpServer.stop(0);
     }
 
     public static class Builder {
@@ -220,9 +220,9 @@ public class SimpleHttpServer {
 
         private static String getEchoString(HttpExchange httpExchange) throws IOException {
             return getFirstLineOfRequest(httpExchange) +
-              getRequestHeaders(httpExchange) +
-              "\nREQUEST BODY:\n" +
-              getRequestBody(httpExchange);
+                    getRequestHeaders(httpExchange) +
+                    "\nREQUEST BODY:\n" +
+                    getRequestBody(httpExchange);
         }
 
         private static String getFirstLineOfRequest(HttpExchange httpExchange) {
@@ -233,8 +233,8 @@ public class SimpleHttpServer {
 
         private static String getRequestHeaders(HttpExchange httpExchange) {
             return httpExchange.getRequestHeaders().entrySet().stream()
-              .map(EchoHandler::formatHeader)
-              .collect(Collectors.joining("\n"));
+                    .map(EchoHandler::formatHeader)
+                    .collect(Collectors.joining("\n"));
         }
 
         private static String getRequestBody(HttpExchange httpExchange) throws IOException {
@@ -254,9 +254,9 @@ public class SimpleHttpServer {
 
         private static String formatHeader(Map.Entry<String, List<String>> header) {
             return header.getKey() + ": " +
-              header.getValue().stream()
-                .map(String::trim)
-                .collect(Collectors.joining("; "));
+                    header.getValue().stream()
+                            .map(String::trim)
+                            .collect(Collectors.joining("; "));
         }
 
     }
@@ -264,22 +264,22 @@ public class SimpleHttpServer {
     private static class HttpsInitializer {
 
         private static final String KEYSTORE_BASE_64 =
-          "/u3+7QAAAAIAAAABAAAAAQAFYWxpYXMAAAFU3TznKQAAAY8wggGLMA4GCisGAQQBKgIRAQEFAASCAXc0adGoYu2VcSzQzoJZFa9n8mpbULjvfZ+I/n" +
-            "EWPMyU8AxWNQuiFcdp+1zRdxUw7mUT8zH6g6K+amyvFzD5d0JrGM2S0ozBCohYbob5LROcZ23PeWq/ikqnMgZviYHUKgihJE8h0CC3FtWYUm1lP+" +
-            "8+Jn4nNoZaugzVlzmJzgjNc39Ha0W88/4OeH/TaxlcULQ8enZViIyWjxvIyNM9v50jhYQdhcPLJ4R/1RXEYL2PL+jBL0eUvOg3J9fHFOzRCZZE1/" +
-            "gUdoeDFISn+MkBVClUXmar+jxciZp8a+AffqNgBdkkCc2MV4Uq22zftZYzELjo6F/umTd5MzT7UjH/M2a5/I4dwX33YimQgiKgGRP9s2GZPnqv9Y" +
-            "endXHrvLtwR5XFApnkAUfqS8/2bhPXppDwfQZDGdtUswskgvBVIGaVS6QQQS22NsxHBoJmIPZqpimTFVzabhMlbFUOvsLb+m/sQC5jglYWMVPXcj" +
-            "7SrRD692mTgEYVLUIAAAABAAVYLjUwOQAAAzkwggM1MIIC86ADAgECAgRtH94+MAsGByqGSM44BAMFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDg" +
-            "YDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDgYDVQQDEwdVbmtub3" +
-            "duMB4XDTE2MDUyMzEwNTAzNloXDTE2MDgyMTEwNTAzNlowbDEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW" +
-            "5rbm93bjEQMA4GA1UEChMHVW5rbm93bjEQMA4GA1UECxMHVW5rbm93bjEQMA4GA1UEAxMHVW5rbm93bjCCAbgwggEsBgcqhkjOOAQBMIIBHwKBgQ" +
-            "D9f1OBHXUSKVLfSpwu7OTn9hG3UjzvRADDHj+AtlEmaUVdQCJR+1k9jVj6v8X1ujD2y5tVbNeBO4AdNG/yZmC3a5lQpaSfn+gEexAiwk+7qdf+t8" +
-            "Yb+DtX58aophUPBPuD9tPFHsMCNVQTWhaRMvZ1864rYdcq7/IiAxmd0UgBxwIVAJdgUI8VIwvMspK5gqLrhAvwWBz1AoGBAPfhoIXWmz3ey7yrXD" +
-            "a4V7l5lK+7+jrqgvlXTAs9B4JnUVlXjrrUWU/mcQcQgYC0SRZxI+hMKBYTt88JMozIpuE8FnqLVHyNKOCjrh4rs6Z1kW6jfwv6ITVi8ftiegEkO8" +
-            "yk8b6oUZCJqIPf4VrlnwaSi2ZegHtVJWQBTDv+z0kqA4GFAAKBgQDy1P+v4aagD2bf6276UdHpk0AGxEg4kovLsaztkK2KYI1GoJ4zsOXrjxTFKE" +
-            "3wq3VJxPQP+MBGAvgre0JKL6ccr//XNJtux87wQ/1vZDp4dBdZCumzvrJ4wrm4LP70hxOHBg8jIwxF7gcxE4ZQW1VScQhQpMRv670vJX9jLJ5meq" +
-            "MhMB8wHQYDVR0OBBYEFBe/PBGeFmst0xCIHZyOeyRgMXcbMAsGByqGSM44BAMFAAMvADAsAhQ1VadgYg/2lmBrn/joFXFpV1uUYgIUNYn+v8ZONW" +
-            "Nl2BbSNFyVY7y4nU2zwSwWo1yjewoT/h6v8U1iNIVyrw==";
+                "/u3+7QAAAAIAAAABAAAAAQAFYWxpYXMAAAFU3TznKQAAAY8wggGLMA4GCisGAQQBKgIRAQEFAASCAXc0adGoYu2VcSzQzoJZFa9n8mpbULjvfZ+I/n" +
+                        "EWPMyU8AxWNQuiFcdp+1zRdxUw7mUT8zH6g6K+amyvFzD5d0JrGM2S0ozBCohYbob5LROcZ23PeWq/ikqnMgZviYHUKgihJE8h0CC3FtWYUm1lP+" +
+                        "8+Jn4nNoZaugzVlzmJzgjNc39Ha0W88/4OeH/TaxlcULQ8enZViIyWjxvIyNM9v50jhYQdhcPLJ4R/1RXEYL2PL+jBL0eUvOg3J9fHFOzRCZZE1/" +
+                        "gUdoeDFISn+MkBVClUXmar+jxciZp8a+AffqNgBdkkCc2MV4Uq22zftZYzELjo6F/umTd5MzT7UjH/M2a5/I4dwX33YimQgiKgGRP9s2GZPnqv9Y" +
+                        "endXHrvLtwR5XFApnkAUfqS8/2bhPXppDwfQZDGdtUswskgvBVIGaVS6QQQS22NsxHBoJmIPZqpimTFVzabhMlbFUOvsLb+m/sQC5jglYWMVPXcj" +
+                        "7SrRD692mTgEYVLUIAAAABAAVYLjUwOQAAAzkwggM1MIIC86ADAgECAgRtH94+MAsGByqGSM44BAMFADBsMRAwDgYDVQQGEwdVbmtub3duMRAwDg" +
+                        "YDVQQIEwdVbmtub3duMRAwDgYDVQQHEwdVbmtub3duMRAwDgYDVQQKEwdVbmtub3duMRAwDgYDVQQLEwdVbmtub3duMRAwDgYDVQQDEwdVbmtub3" +
+                        "duMB4XDTE2MDUyMzEwNTAzNloXDTE2MDgyMTEwNTAzNlowbDEQMA4GA1UEBhMHVW5rbm93bjEQMA4GA1UECBMHVW5rbm93bjEQMA4GA1UEBxMHVW" +
+                        "5rbm93bjEQMA4GA1UEChMHVW5rbm93bjEQMA4GA1UECxMHVW5rbm93bjEQMA4GA1UEAxMHVW5rbm93bjCCAbgwggEsBgcqhkjOOAQBMIIBHwKBgQ" +
+                        "D9f1OBHXUSKVLfSpwu7OTn9hG3UjzvRADDHj+AtlEmaUVdQCJR+1k9jVj6v8X1ujD2y5tVbNeBO4AdNG/yZmC3a5lQpaSfn+gEexAiwk+7qdf+t8" +
+                        "Yb+DtX58aophUPBPuD9tPFHsMCNVQTWhaRMvZ1864rYdcq7/IiAxmd0UgBxwIVAJdgUI8VIwvMspK5gqLrhAvwWBz1AoGBAPfhoIXWmz3ey7yrXD" +
+                        "a4V7l5lK+7+jrqgvlXTAs9B4JnUVlXjrrUWU/mcQcQgYC0SRZxI+hMKBYTt88JMozIpuE8FnqLVHyNKOCjrh4rs6Z1kW6jfwv6ITVi8ftiegEkO8" +
+                        "yk8b6oUZCJqIPf4VrlnwaSi2ZegHtVJWQBTDv+z0kqA4GFAAKBgQDy1P+v4aagD2bf6276UdHpk0AGxEg4kovLsaztkK2KYI1GoJ4zsOXrjxTFKE" +
+                        "3wq3VJxPQP+MBGAvgre0JKL6ccr//XNJtux87wQ/1vZDp4dBdZCumzvrJ4wrm4LP70hxOHBg8jIwxF7gcxE4ZQW1VScQhQpMRv670vJX9jLJ5meq" +
+                        "MhMB8wHQYDVR0OBBYEFBe/PBGeFmst0xCIHZyOeyRgMXcbMAsGByqGSM44BAMFAAMvADAsAhQ1VadgYg/2lmBrn/joFXFpV1uUYgIUNYn+v8ZONW" +
+                        "Nl2BbSNFyVY7y4nU2zwSwWo1yjewoT/h6v8U1iNIVyrw==";
         private static final char[] KEYSTORE_PASSWORD = "simulator".toCharArray();
 
         static SSLContext tryToGetSslContext() {
@@ -293,7 +293,7 @@ public class SimpleHttpServer {
         }
 
         private static SSLContext getSslContext() throws NoSuchAlgorithmException, KeyStoreException, IOException,
-          CertificateException, UnrecoverableKeyException, KeyManagementException {
+                CertificateException, UnrecoverableKeyException, KeyManagementException {
             SSLContext sslContext = SSLContext.getInstance("TLS");
             KeyStore keyStore = getKeyStore();
             KeyManagerFactory keyManagerFactory = getKeyManagerFactory(keyStore);
@@ -303,21 +303,21 @@ public class SimpleHttpServer {
         }
 
         private static KeyStore getKeyStore() throws
-          KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
+                KeyStoreException, IOException, NoSuchAlgorithmException, CertificateException {
             KeyStore keyStore = KeyStore.getInstance("JKS");
             keyStore.load(getKeystoreStream(), KEYSTORE_PASSWORD);
             return keyStore;
         }
 
         private static KeyManagerFactory getKeyManagerFactory(KeyStore keyStore) throws
-          NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException {
+                NoSuchAlgorithmException, KeyStoreException, UnrecoverableKeyException {
             KeyManagerFactory keyManagerFactory = KeyManagerFactory.getInstance("SunX509");
             keyManagerFactory.init(keyStore, KEYSTORE_PASSWORD);
             return keyManagerFactory;
         }
 
         private static TrustManagerFactory getTrustManagerFactory(KeyStore keyStore) throws
-          NoSuchAlgorithmException, KeyStoreException {
+                NoSuchAlgorithmException, KeyStoreException {
             TrustManagerFactory trustManagerFactory = TrustManagerFactory.getInstance("SunX509");
             trustManagerFactory.init(keyStore);
             return trustManagerFactory;
