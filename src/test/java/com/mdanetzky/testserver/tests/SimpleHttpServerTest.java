@@ -4,6 +4,7 @@ import com.mdanetzky.testserver.SimpleHttpServer;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 import org.hamcrest.Matchers;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -19,8 +20,7 @@ import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -158,16 +158,65 @@ public class SimpleHttpServerTest {
     @Test
     public void multiThreaded() throws IOException, InterruptedException {
         int numberOfThreads = 4;
-        TestThreadsHolder testThreadsHolder = runTestThreads(numberOfThreads);
-        assertTrue(testThreadsHolder.assertionsOk.get());
-        assertEquals(testThreadsHolder.threadsFinished.get(), numberOfThreads);
+        int timeoutInMilliseconds = 2000;
+        runTestThreads(numberOfThreads, timeoutInMilliseconds);
     }
 
-    private TestThreadsHolder runTestThreads(int numberOfThreads) throws InterruptedException {
-        TestThreadsHolder testThreadsHolder = new TestThreadsHolder();
-        Collection<Thread> threads = testThreadsHolder.startTestThreads(numberOfThreads);
-        testThreadsHolder.waitForThreads(threads);
-        return testThreadsHolder;
+    private static void runTestThreads(int numberOfThreads, int timeoutInMilliseconds) throws InterruptedException {
+        ExecutorService exec = Executors.newCachedThreadPool();
+        List<TestTask> tasks = Stream
+                .generate(TestTask::new)
+                .limit(numberOfThreads)
+                .collect(Collectors.toList());
+        exec.invokeAll(tasks, timeoutInMilliseconds, TimeUnit.MILLISECONDS)
+                .forEach(SimpleHttpServerTest::finishFuture);
+    }
+
+    private static void finishFuture(Future<Void> future) {
+        try {
+            future.get();
+        } catch (ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        } catch (CancellationException e) {
+            Assert.fail("Timeout reached. Consider extending it on slower machines.");
+        } catch (InterruptedException e) {
+            Assert.fail("The thread was interrupted.");
+        }
+    }
+
+    private static void testFiftyServerContexts() throws IOException {
+        String testContent = TEST_CONTENT + RandomString.get();
+        for (int i = 0; i < 50; i++)
+            testServerContext(testContent);
+    }
+
+    private static void testServerContext(String testContent) throws IOException {
+        String url = startServerContextOrDie(testContent);
+        testContentDelivery(testContent, url);
+        sleepRandomMilliseconds();
+    }
+
+    private static String startServerContextOrDie(String testContent) throws IOException {
+        return startServerContext(testContent);
+    }
+
+    private static void testContentDelivery(String testContent, String url) throws IOException {
+        Assert.assertEquals(HttpUtil.getHttpText(url), testContent);
+    }
+
+    private static void sleepRandomMilliseconds() {
+        try {
+            Random random = new Random();
+            Thread.sleep(random.nextInt(10));
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
+    private static String startServerContext(String testContent) throws IOException {
+        return SimpleHttpServer.getBuilder()
+                .setContent(testContent)
+                .start();
     }
 
     private static class HttpUtil {
@@ -239,81 +288,12 @@ public class SimpleHttpServerTest {
 
     }
 
-    private static class TestThreadsHolder {
+    private static class TestTask implements Callable<Void> {
 
-        final AtomicBoolean assertionsOk = new AtomicBoolean(true);
-        final AtomicInteger threadsFinished = new AtomicInteger(0);
-
-        private Collection<Thread> startTestThreads(int numberOfThreads) {
-            Collection<Thread> threads = new ArrayList<>();
-            Stream.generate(this::createAndStartTestThread)
-                    .limit(numberOfThreads)
-                    .forEach(threads::add);
-            return threads;
-        }
-
-        private Thread createAndStartTestThread() {
-            Thread thread = getTestThread();
-            thread.start();
-            return thread;
-        }
-
-        private Thread getTestThread() {
-            return new Thread(this::testServerInstance);
-        }
-
-        private void waitForThreads(Collection<Thread> threads) throws InterruptedException {
-            for (Thread thread : threads)
-                thread.join(2000);
-        }
-
-        private void testServerInstance() {
-            testFiftyServerContexts();
-            threadsFinished.incrementAndGet();
-        }
-
-        private void testFiftyServerContexts() {
-            String testContent = TEST_CONTENT + RandomString.get();
-            for (int i = 0; i < 50; i++)
-                testServerContext(testContent);
-        }
-
-        private void testServerContext(String testContent) {
-            String url = startServerContextOrDie(testContent);
-            testContentDelivery(testContent, url);
-            sleepRandomMilliseconds();
-        }
-
-        private String startServerContextOrDie(String testContent) {
-            try {
-                return startServerContext(testContent);
-            } catch (IOException e) {
-                assertionsOk.set(false);
-            }
+        @Override
+        public Void call() throws Exception {
+            SimpleHttpServerTest.testFiftyServerContexts();
             return null;
-        }
-
-        private void testContentDelivery(String testContent, String url) {
-            try {
-                assertionsOk.set(HttpUtil.getHttpText(url).equals(testContent));
-            } catch (IOException e) {
-                assertionsOk.set(false);
-            }
-        }
-
-        private void sleepRandomMilliseconds() {
-            try {
-                Random random = new Random();
-                Thread.sleep(random.nextInt(10));
-            } catch (InterruptedException e) {
-                assertionsOk.set(false);
-            }
-        }
-
-        private String startServerContext(String testContent) throws IOException {
-            return SimpleHttpServer.getBuilder()
-                    .setContent(testContent)
-                    .start();
         }
     }
 
