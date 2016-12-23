@@ -164,12 +164,19 @@ public class SimpleHttpServerTest {
 
     private static void runTestThreads(int numberOfThreads, int timeoutInMilliseconds) throws InterruptedException {
         ExecutorService exec = Executors.newCachedThreadPool();
-        List<TestTask> tasks = Stream
-                .generate(TestTask::new)
+        List<Callable<Void>> tasks = Stream
+                .generate(SimpleHttpServerTest::getTestFiftyServerContextsTask)
                 .limit(numberOfThreads)
                 .collect(Collectors.toList());
         exec.invokeAll(tasks, timeoutInMilliseconds, TimeUnit.MILLISECONDS)
                 .forEach(SimpleHttpServerTest::finishFuture);
+    }
+
+    private static Callable<Void> getTestFiftyServerContextsTask() {
+        return () -> {
+            testFiftyServerContexts();
+            return null;
+        };
     }
 
     private static void finishFuture(Future<Void> future) {
@@ -271,7 +278,6 @@ public class SimpleHttpServerTest {
             return header.getKey() + ": " +
                     header.getValue().stream().collect(Collectors.joining("; "));
         }
-
     }
 
     private static class RandomString {
@@ -285,16 +291,5 @@ public class SimpleHttpServerTest {
                 buffer[i] = SYMBOLS[random.nextInt(SYMBOLS.length)];
             return new String(buffer);
         }
-
     }
-
-    private static class TestTask implements Callable<Void> {
-
-        @Override
-        public Void call() throws Exception {
-            SimpleHttpServerTest.testFiftyServerContexts();
-            return null;
-        }
-    }
-
 }
