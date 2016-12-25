@@ -16,8 +16,7 @@ First a static method getBuilder() creates a new server builder instance. Next, 
 
 Under the hood the start() method does the following:
 * look up already running instance of the server and if not found
-    * look for a free localhost port above 1665
-    * start an http/s server at this port
+    * start an http/s server at an ephemeral port provided by the system
 * create a new handler and register it at the path /0 or next free integer. Url example: http://localhost:1666/2
 
 ### List of all Builder methods

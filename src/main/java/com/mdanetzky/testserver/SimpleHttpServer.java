@@ -10,7 +10,6 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.net.BindException;
 import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -21,7 +20,6 @@ import java.util.stream.Collectors;
 public class SimpleHttpServer {
 
     public static final SSLContext sslContext = HttpsInitializer.tryToGetSslContext();
-    private static int currentPort = 1665;
     private static SimpleHttpServer testServer;
     private static SimpleHttpServer testServerSsl;
     private static int contextSuffix = 0;
@@ -29,29 +27,13 @@ public class SimpleHttpServer {
 
     private SimpleHttpServer(boolean ssl) throws IOException {
         httpServer = createServer(ssl);
-        bindFreePort(httpServer);
+        bindPort(httpServer);
         httpServer.setExecutor(Executors.newCachedThreadPool());
         httpServer.start();
     }
 
-    private static void bindFreePort(HttpServer server) throws IOException {
-        while (server.getAddress() == null)
-            if (tryToBindPort(server))
-                break;
-    }
-
-    private static boolean tryToBindPort(HttpServer httpServer) throws IOException {
-        try {
-            bindPort(httpServer);
-        } catch (BindException e) {
-            return false;
-        }
-        return true;
-    }
-
     private static void bindPort(HttpServer httpServer) throws IOException {
-        currentPort++;
-        InetSocketAddress address = new InetSocketAddress(currentPort);
+        InetSocketAddress address = new InetSocketAddress(0);
         httpServer.bind(address, 0);
     }
 
