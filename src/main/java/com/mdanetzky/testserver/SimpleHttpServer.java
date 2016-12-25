@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.security.*;
 import java.security.cert.CertificateException;
@@ -33,7 +34,7 @@ public class SimpleHttpServer {
     }
 
     private static void bindPort(HttpServer httpServer) throws IOException {
-        InetSocketAddress address = new InetSocketAddress(0);
+        InetSocketAddress address = new InetSocketAddress(InetAddress.getLoopbackAddress(), 0);
         httpServer.bind(address, 0);
     }
 
@@ -90,7 +91,9 @@ public class SimpleHttpServer {
     }
 
     private String getOrigin() {
-        return getProtocol() + "://localhost:" + httpServer.getAddress().getPort();
+        return getProtocol() + "://" +
+                httpServer.getAddress().getHostName() + ":" +
+                httpServer.getAddress().getPort();
     }
 
     private String getProtocol() {
