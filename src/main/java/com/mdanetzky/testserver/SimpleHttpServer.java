@@ -164,7 +164,6 @@ public class SimpleHttpServer {
                 return testServerSsl;
             return testServer;
         }
-
     }
 
     private static class BasicHandler {
@@ -189,7 +188,6 @@ public class SimpleHttpServer {
             os.write(contentBytes);
             os.close();
         }
-
     }
 
     private static class EchoHandler {
@@ -243,7 +241,6 @@ public class SimpleHttpServer {
                             .map(String::trim)
                             .collect(Collectors.joining("; "));
         }
-
     }
 
     private static class HttpsInitializer {
@@ -312,7 +309,6 @@ public class SimpleHttpServer {
             byte[] data = Base64.getDecoder().decode(KEYSTORE_BASE_64);
             return new ByteArrayInputStream(data);
         }
-
     }
 
     private static class MyHttpsConfigurator extends HttpsConfigurator {
@@ -329,7 +325,6 @@ public class SimpleHttpServer {
             params.setProtocols(engine.getEnabledProtocols());
             params.setSSLParameters(sslContext.getDefaultSSLParameters());
         }
-
     }
 
     private static class HttpHeaderParser {
@@ -370,7 +365,5 @@ public class SimpleHttpServer {
         private static int getIndexOfFirstColon(String string) {
             return string.indexOf(":");
         }
-
     }
-
 }

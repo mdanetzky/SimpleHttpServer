@@ -2,7 +2,6 @@ package com.mdanetzky.testserver.tests;
 
 import com.mdanetzky.testserver.SimpleHttpServer;
 import com.sun.net.httpserver.HttpHandler;
-import com.sun.net.httpserver.HttpServer;
 import org.hamcrest.Matchers;
 import org.junit.Assert;
 import org.junit.Rule;
@@ -15,8 +14,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.net.BindException;
-import java.net.InetSocketAddress;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
@@ -24,7 +21,8 @@ import java.util.concurrent.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class SimpleHttpServerTest {
 
@@ -83,25 +81,6 @@ public class SimpleHttpServerTest {
         thrown.expect(IOException.class);
         thrown.expectMessage(Matchers.containsString("Server returned HTTP response code: 402 for URL"));
         HttpUtil.readUrlConnection(connection);
-    }
-
-    @Test
-    public void bindsNextFreePort() throws IOException {
-        SimpleHttpServer.stop();
-        stealPort1666();
-        String url = SimpleHttpServer.getBuilder().startEcho();
-        assertNotNull(url);
-        assertFalse(url.contains("1666"));
-    }
-
-    private static void stealPort1666() throws IOException {
-        try {
-            HttpServer portBlock = HttpServer.create();
-            InetSocketAddress address = new InetSocketAddress(1666);
-            portBlock.bind(address, 0);
-        } catch (BindException ignored) {
-            // the port 1666 is already bound
-        }
     }
 
     @Test
