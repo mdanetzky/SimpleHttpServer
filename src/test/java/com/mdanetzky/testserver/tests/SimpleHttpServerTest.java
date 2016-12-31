@@ -136,7 +136,7 @@ public class SimpleHttpServerTest {
 
     @Test
     public void multiThreaded() throws IOException, InterruptedException {
-        int numberOfThreads = 4;
+        int numberOfThreads = Runtime.getRuntime().availableProcessors() + 1;
         int timeoutInMilliseconds = 2000;
         runTestThreads(numberOfThreads, timeoutInMilliseconds);
     }
